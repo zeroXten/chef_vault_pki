@@ -92,6 +92,7 @@ See `attributes/default.rb` for defaults.
 * `node['chef_vault_pki']['ca']` - name of the CA
 * `node['chef_vault_pki']['expires']` - certificate expiry period (in days by default)
 * `node['chef_vault_pki']['expires_factor']` - used to calculate the period (a day by default)
+* `node['chef_vault_pki']['key_size']` - key size to use
 * `node['chef_vault_pki']['path']` - where generated certs etc go (managed by Chef)
 * `node['chef_vault_pki']['path_mode']` - permissions of the path
 * `node['chef_vault_pki']['path_recursive']` - recursively create the path
