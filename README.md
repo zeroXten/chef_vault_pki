@@ -1,8 +1,8 @@
 # chef\_vault\_pki cookbook
 
-Uses chef-vault to provide an easy to manage PKI for Chef managed servers.
+Uses chef-vault to provide an easy-to-manage PKI for Chef managed servers.
 
-Instead of having to manage and secure a CA, chef\vault\_pki lets you create a CA cert and key using the provided script which is then stored using chef\_vault. Authorised clients can then obtain the CA cert and key, and automatically generate their certificates.
+Instead of having to manage and secure a CA, chef\_vault\_pki lets you generate a CA cert and key which is then stored and secured using chef-vault. Authorised clients can then obtain the CA cert and key, and automatically generate their certificates.
 
 # Requirements
 
@@ -15,13 +15,14 @@ Depends on [chef-vault](http://community.opscode.com/cookbooks/chef-vault) and [
 Install the [chef-vault-pki](https://github.com/zeroXten/chef-vault-pki) command on your workstation.
 
 Run
+
     $ bundle install
 
 from here, or
 
     $ gem install chef-vault-pki
 
-Running the `chef-vault-pki` will randomly generate CA certificate and key, and will output the PEMs as JSON by default. We pass this directly to chef-vault to create an encrypted data bag.
+Running chef-vault-pki will randomly generate a CA certificate and key, and will output the PEMs as JSON by default. We pass this directly to chef-vault to create an encrypted data bag.
 
     $ chef-vault-pki | knife vault create chef_vault_pki chef_vault_pki_ca -J /dev/stdin --search 'role:base' --admins admin-user
 
