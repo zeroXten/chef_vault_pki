@@ -1,6 +1,19 @@
 include_recipe 'sensu_spec'
 
-chef_vault_pki 'chef_vault_test'
+chef_vault_pki 'chef_vault_test' do
+  data_bag 'chef_vault_pki'
+  ca 'chef_vault_pki_ca'
+  expires 3655
+  expires_factor 60 * 60 * 24
+  key_size 2048
+  path '/opt/chef_vault_pki'
+  path_mode 0755
+  path_recursive = false
+  owner 'root'
+  group 'root'
+  public_mode 0640
+  private_mode 0600
+end
 
 cert = ::File.join(node['chef_vault_pki']['path'], "chef_vault_test.crt")
 key = ::File.join(node['chef_vault_pki']['path'], "chef_vault_test.key")

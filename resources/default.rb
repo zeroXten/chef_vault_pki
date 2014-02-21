@@ -4,6 +4,7 @@ default_action :create
 attribute :name, :kind_of => String, :name_attribute => true
 attribute :expires, :kind_of => Integer
 attribute :expires_factor, :kind_of => Integer
+attribute :key_size, :kind_of => Integer
 attribute :ca, :kind_of => String
 attribute :path, :kind_of => String
 attribute :path_mode, :kind_of => [String, Integer]

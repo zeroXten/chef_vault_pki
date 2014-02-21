@@ -16,7 +16,7 @@ action :create do
   require 'chef-vault'
 
   opt = { 'name' => new_resource.name.gsub(' ', '_') }
-  %w[ data_bag ca expires expires_factor path path_mode path_recursive owner group public_mode private_mode ].each do |attr|
+  %w[ data_bag ca expires expires_factor key_size path path_mode path_recursive owner group public_mode private_mode ].each do |attr|
     opt[attr] = new_resource.send(attr) ? new_resource.send(attr) : node['chef_vault_pki'][attr]
   end
 
@@ -52,7 +52,7 @@ action :create do
   r = ruby_block 'create_new_cert' do
     block do
 
-      key = OpenSSL::PKey::RSA.new 2048
+      key = OpenSSL::PKey::RSA.new opt['key_size']
 
       csr = OpenSSL::X509::Request.new
       csr.version = 0
@@ -64,7 +64,7 @@ action :create do
       csr_cert.serial = 0
       csr_cert.version = 2
       csr_cert.not_before = Time.now
-      csr_cert.not_after = opt['expires'] * opt['expires_factor']
+      csr_cert.not_after = Time.now + opt['expires'] * opt['expires_factor']
 
       csr_cert.subject = csr.subject
       csr_cert.public_key = csr.public_key
