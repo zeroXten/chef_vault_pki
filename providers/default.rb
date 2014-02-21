@@ -1,3 +1,4 @@
+# RTFM
 def whyrun_supported?
   true
 end
@@ -5,7 +6,6 @@ end
 use_inline_resources
 
 action :create do
-
   r = chef_gem 'chef-vault' do
     action :nothing
   end
@@ -16,7 +16,7 @@ action :create do
   require 'chef-vault'
 
   opt = { 'name' => new_resource.name.gsub(' ', '_') }
-  %w[ data_bag ca path path_mode path_recursive owner group public_mode private_mode ].each do |attr|
+  %w[ data_bag ca expires expires_factor path path_mode path_recursive owner group public_mode private_mode ].each do |attr|
     opt[attr] = new_resource.send(attr) ? new_resource.send(attr) : node['chef_vault_pki'][attr]
   end
 
@@ -64,7 +64,7 @@ action :create do
       csr_cert.serial = 0
       csr_cert.version = 2
       csr_cert.not_before = Time.now
-      csr_cert.not_after = Time.now + 600
+      csr_cert.not_after = opt['expires'] * opt['expires_factor']
 
       csr_cert.subject = csr.subject
       csr_cert.public_key = csr.public_key
@@ -73,7 +73,6 @@ action :create do
       extension_factory = OpenSSL::X509::ExtensionFactory.new
       extension_factory.subject_certificate = csr_cert
       extension_factory.issuer_certificate = ca_cert
-
       extension_factory.create_extension 'basicConstraints', 'CA:FALSE'
       extension_factory.create_extension 'keyUsage', 'keyEncipherment,dataEncipherment,digitalSignature'
       extension_factory.create_extension 'subjectKeyIdentifier', 'hash'
@@ -81,10 +80,6 @@ action :create do
       csr_cert.sign ca_key, OpenSSL::Digest::SHA1.new
 
       node.run_state['chef_vault_pki'] = { 'cert' => csr_cert.to_pem, 'key' => key.to_pem }
-
-      if not node.set['chef_vault_pki']['certs'].has_key? opt['ca']
-        node.set['chef_vault_pki']['certs'][opt['ca']] = {}
-      end
 
       node.set['chef_vault_pki']['certs'][opt['ca']][opt['name']] = csr_cert.to_pem
     end
@@ -105,11 +100,23 @@ action :create do
 end
 
 action :delete do
-
   opt = { 'name' => new_resource.name.gsub(' ', '_') }
-  %w[ data_bag ca path path_mode path_recursive owner group public_mode private_mode ].each do |attr|
+  %w[ ca path ].each do |attr|
     opt[attr] = new_resource.send(attr) ? new_resource.send(attr) : node['chef_vault_pki'][attr]
   end
 
-  #new_resource.updated_by_last_action(true) if resource.updated_by_last_action?
+  r = file ::File.join(opt['path'], "#{opt['name']}.crt") do
+    action :delete
+  end
+  new_resource.updated_by_last_action(true) if r.updated_by_last_action?
+
+  r = file ::File.join(opt['path'], "#{opt['name']}.key") do
+    action :delete
+  end  
+  new_resource.updated_by_last_action(true) if r.updated_by_last_action?
+
+  r = file ::File.join(opt['path'], "#{opt['ca']}.crt") do
+    action :delete
+  end
+  new_resource.updated_by_last_action(true) if r.updated_by_last_action?
 end
