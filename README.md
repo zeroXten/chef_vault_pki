@@ -41,7 +41,7 @@ Add this to your cookbook's metadata.rb
 
 Then install with `berks install`.
 
-Basic usage will use defaults set in attributes:
+Basic usage will use the defaults set in attributes (see below):
 
     chef_vault_pki node.name
 
@@ -78,7 +78,7 @@ This approach to managing a PKI isn't suitable for many situations. The generate
 
 It is assumes you that trust all clients and the workstation that created the CA. It also assumes you trust chef-vault.
 
-Because it treats the CA key as a shared key, you cannot revoke a certificate in the tradiitonal sense. In the same way that a shared password compromise requires the password to be changed everywhere, so it is with chef\_vault\_pki. However, updating the CA key is as simple as re-creating the data bag using the `chef-vault-pki` and chef-vault commands as above. All nodes will automatically detect the CA has changed and will generate new certificates during their next run.
+Because it treats the CA key as a shared key, you cannot revoke a certificate in the traditonal sense. In the same way that a shared password compromise requires the password to be changed everywhere, so it is with chef\_vault\_pki. However, updating the CA key is as simple as re-creating the data bag using the `chef-vault-pki` and `chef-vault` commands as above. All nodes will automatically detect the CA has changed and will generate new certificates during their next run.
 
 # Attributes
 
