@@ -35,7 +35,7 @@ See the chef-vault documentation for more information on managing data bags encr
 
 ## Using chef\_vault\_pki in a recipe
 
-Add this to your cookbook's metadata.rb
+chef\_vault\_pki provides an LWRP that can be used your cookbooks. To use it, add this to your cookbook's metadata.rb
 
     depends 'chef_vault_pki'
 
