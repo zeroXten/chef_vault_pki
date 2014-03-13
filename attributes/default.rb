@@ -8,6 +8,6 @@ default['chef_vault_pki']['path_mode'] = 0755
 default['chef_vault_pki']['path_recursive'] = false
 default['chef_vault_pki']['owner'] = 'root'
 default['chef_vault_pki']['group'] = 'root'
-default['chef_vault_pki']['public_mode'] = 0640
+default['chef_vault_pki']['public_mode'] = 0644
 default['chef_vault_pki']['private_mode'] = 0600
 default['chef_vault_pki']['bundle_ca'] = false
