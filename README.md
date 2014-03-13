@@ -14,11 +14,7 @@ Depends on [chef-vault](http://community.opscode.com/cookbooks/chef-vault) and [
 
 Install the [chef-vault-pki](https://github.com/zeroXten/chef-vault-pki) command on your workstation.
 
-Run this in the cookbook:
-
-    $ bundle install
-
-Or install the gem yourself:
+Install the gem:
 
     $ gem install chef-vault-pki
 
