@@ -16,7 +16,7 @@ action :create do
   require 'chef-vault'
 
   opt = { 'name' => new_resource.name.gsub(' ', '_') }
-  %w[ data_bag ca expires expires_factor key_size path path_mode path_recursive owner group public_mode private_mode ].each do |attr|
+  %w[ data_bag ca expires expires_factor key_size path path_mode path_recursive owner group public_mode private_mode bundle_ca ].each do |attr|
     opt[attr] = new_resource.send(attr) ? new_resource.send(attr) : node['chef_vault_pki'][attr]
   end
 
@@ -37,7 +37,7 @@ action :create do
     owner opt['owner']
     group opt['group']
     mode opt['public_mode']
-    content lazy { node.run_state['chef_vault_pki']['cert'] }
+    content lazy { opt['bundle_ca'] ? [ca_cert, node.run_state['chef_vault_pki']['cert']].join("\n") : node.run_state['chef_vault_pki']['cert'] }
     action :nothing
   end
 
