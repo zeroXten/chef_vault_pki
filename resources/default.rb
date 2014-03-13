@@ -14,4 +14,4 @@ attribute :group, :kind_of => String
 attribute :public_mode, :kind_of => [String, Integer]
 attribute :private_mode, :kind_of => [String, Integer]
 attribute :data_bag, :kind_of => String
-attribute :bundle_ca :kind_of => [TrueClass, FalseClass]
+attribute :bundle_ca, :kind_of => [TrueClass, FalseClass]
