@@ -43,7 +43,7 @@ Basic usage will use the defaults set in attributes (see below):
 
 Note that the name automatically has spaces converted to underscores (\_).
 
-You might need make things a little more specifc:
+Maybe you need make things a little more specifc:
 
     chef_vault_pki "sensu_#{node.name}"
 
