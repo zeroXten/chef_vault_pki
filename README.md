@@ -60,6 +60,7 @@ Or even override the default attributes:
       group 'sensu'
       public_mode 0644
       private_mode 0600
+      bundle_ca true
     end
 
 This final example will create three files in `/opt/chef_vault_pki`:
@@ -100,6 +101,7 @@ See `attributes/default.rb` for defaults.
 * `node['chef_vault_pki']['group']` - file and path group
 * `node['chef_vault_pki']['public_mode']` - permissions of public files (e.g. certs)
 * `node['chef_vault_pki']['private_mode']` - permissions of private files (e.g. keys)
+* `node['chef_vault_pki']['bundle_ca']` - this bundles the ca cert with the client cert
 
 Generated client certs are added to the node attributes:
 
