@@ -41,7 +41,7 @@ Basic usage will use the defaults set in attributes (see below):
 
     chef_vault_pki node.name
 
-Note that the name automatically has spaces converted to underscores (\_).
+Note that the name has spaces automatically converted to underscores (\_).
 
 Maybe you need make things a little more specifc:
 
@@ -83,6 +83,8 @@ If you want to regenerate a certificate for a client, just delete the CA certifi
 
 # Attributes
 
+Attributes are used to set the defaults for the chef\_vault\_pki resource. This allows you to override values per resource, or for the node.
+
 See `attributes/default.rb` for defaults.
 
 * `node['chef_vault_pki']['data_bag']` - name of the chef\_vault data bag
@@ -97,7 +99,7 @@ See `attributes/default.rb` for defaults.
 * `node['chef_vault_pki']['group']` - file and path group
 * `node['chef_vault_pki']['public_mode']` - permissions of public files (e.g. certs)
 * `node['chef_vault_pki']['private_mode']` - permissions of private files (e.g. keys)
-* `node['chef_vault_pki']['bundle_ca']` - this bundles the ca cert with the client cert
+* `node['chef_vault_pki']['bundle_ca']` - this bundles the ca cert with the client cert (e.g. for Sensu)
 
 Generated client certs are added to the node attributes:
 
@@ -117,4 +119,4 @@ Generated client certs are added to the node attributes:
 
 # Author
 
-fraser.scott@gmail.com
+zeroXten - fraser.scott@gmail.com
