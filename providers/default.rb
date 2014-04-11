@@ -10,13 +10,20 @@ action :create do
     action :nothing
   end
   r.run_action(:install)
+
+  r = chef_gem 'chef-vault-pki' do
+    action :nothing
+  end
+  r.run_action(:install)
+
   Gem.clear_paths
 
   require 'openssl'
   require 'chef-vault'
+  require 'chef-vault-pki'
 
   opt = { 'name' => new_resource.name.gsub(' ', '_') }
-  %w[ data_bag ca expires expires_factor key_size path path_mode path_recursive owner group public_mode private_mode bundle_ca ].each do |attr|
+  %w[ data_bag ca expires expires_factor key_size path path_mode path_recursive owner group public_mode private_mode bundle_ca standalone ].each do |attr|
     opt[attr] = new_resource.send(attr) ? new_resource.send(attr) : node['chef_vault_pki'][attr]
   end
 
@@ -29,9 +36,17 @@ action :create do
   end
   r.run_action(:create)
 
-  ca = ChefVault::Item.load(opt['data_bag'], opt['ca'])
-  ca_key = OpenSSL::PKey::RSA.new ca['key']
-  ca_cert = OpenSSL::X509::Certificate.new ca['cert']
+  if opt['standalone']
+    c = ChefVaultPKI::CA.new(opt.select {|k,v| %w[key_size expires expires_factor name].include?(k) })
+    c.generate!
+    ca_cert = c.cert
+    ca_key = c.key
+    ca = { 'cert' => ca_cert.to_pem, 'key' => ca_key.to_pem }
+  else
+    ca = ChefVault::Item.load(opt['data_bag'], opt['ca'])
+    ca_key = OpenSSL::PKey::RSA.new ca['key']
+    ca_cert = OpenSSL::X509::Certificate.new ca['cert']
+  end
 
   r = file ::File.join(opt['path'], "#{opt['name']}.crt") do
     owner opt['owner']
