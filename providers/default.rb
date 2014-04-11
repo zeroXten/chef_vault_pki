@@ -103,6 +103,14 @@ action :create do
     notifies :create, resources(:file => ::File.join(opt['path'], "#{opt['name']}.key")), :immediately
   end
 
+  r = file ::File.join(opt['path'], "#{opt['ca']}.key") do
+    owner opt['owner']
+    group opt['group']
+    mode opt['private_mode']
+    content ca['key']
+    only_if { opt['standalone'] }
+  end
+
   r = file ::File.join(opt['path'], "#{opt['ca']}.crt") do
     owner opt['owner']
     group opt['group']
@@ -133,5 +141,11 @@ action :delete do
   r = file ::File.join(opt['path'], "#{opt['ca']}.crt") do
     action :delete
   end
+
+  r = file ::File.join(opt['path'], "#{opt['ca']}.key") do
+    action :delete
+    only_if { opt['standalone'] }
+  end
+
   new_resource.updated_by_last_action(true) if r.updated_by_last_action?
 end
