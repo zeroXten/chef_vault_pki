@@ -1,3 +1,4 @@
+include_recipe 'apt'
 include_recipe 'sensu_spec'
 
 chef_vault_pki 'chef_vault_test' do
@@ -14,7 +15,6 @@ chef_vault_pki 'chef_vault_test' do
   public_mode 0640
   private_mode 0600
   bundle_ca false
-  standalone true
 end
 
 cert = ::File.join(node['chef_vault_pki']['path'], "chef_vault_test.crt")

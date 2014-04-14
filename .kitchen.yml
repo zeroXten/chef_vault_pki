@@ -15,7 +15,11 @@ suites:
     run_list:
       - recipe[chef_vault_pki::test]
       - recipe[minitest-handler]
-    attributes:
+    attributes: {
+      chef_vault_pki: {
+        standalone: true
+      }
+    }
 
 settings:
   parallel: true
