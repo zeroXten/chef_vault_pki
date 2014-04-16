@@ -99,7 +99,8 @@ See `attributes/default.rb` for defaults.
 * `node['chef_vault_pki']['group']` - file and path group
 * `node['chef_vault_pki']['public_mode']` - permissions of public files (e.g. certs)
 * `node['chef_vault_pki']['private_mode']` - permissions of private files (e.g. keys)
-* `node['chef_vault_pki']['bundle_ca']` - this bundles the ca cert with the client cert (e.g. for Sensu)
+* `node['chef_vault_pki']['bundle_ca']` - this bundles the ca cert with the client cert
+* `node['chef_vault_pki']['standalone']` - doesn't attempt to read the ca from chef-vault, but generates on instead (e.g. for testing)
 
 Generated client certs are added to the node attributes:
 
