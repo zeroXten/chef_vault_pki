@@ -40,3 +40,37 @@ end
 sensu_spec 'verify cert' do
   command "check_cmd -c 'openssl verify -CAfile #{ca_cert} #{cert}' -o 'OK'"
 end
+
+# Two certs one CA
+chef_vault_pki 'server_a' do
+  ca 'twocerts_ca'
+  ca_path '/opt/twocerts_ca'
+  path '/opt/server_a'
+end
+
+chef_vault_pki 'server_b' do
+  ca 'twocerts_ca'
+  ca_path '/opt/twocerts_ca'
+  path '/opt/server_b'
+end
+
+%w[ server_a server_b twocerts_ca ].each do |f|
+  sensu_spec "twocerts #{f} cert exists" do
+    command "check_cmd -c 'test -r /opt/#{f}/#{f}.crt' -e 0"
+  end
+  sensu_spec "twocerts #{f} key exists" do
+    command "check_cmd -c 'test -r /opt/#{f}/#{f}.key' -e 0"
+  end
+end
+
+%w[ server_a server_b twocerts_ca ].each do |f|
+  sensu_spec "verify #{f} cert key" do
+    command "check_cmd -c '(openssl x509 -noout -modulus -in /opt/#{f}/#{f}.crt | openssl md5 ; openssl rsa -noout -modulus -in /opt/#{f}/#{f}.key | openssl md5) | uniq | wc -l' -o 1"
+  end
+end
+
+%w[ server_a server_b ].each do |f|
+  sensu_spec "verify #{f} cert" do
+    command "check_cmd -c 'openssl verify -CAfile /opt/twocerts_ca/twocerts_ca.crt /opt/#{f}/#{f}.crt' -o 'OK'"
+  end
+end

@@ -27,6 +27,19 @@ action :create do
     opt[attr] = new_resource.send(attr) ? new_resource.send(attr) : node['chef_vault_pki'][attr]
   end
 
+  %w[ path path_mode path_recursive ].each do |attr|
+    ca_attr = "ca_#{attr}"
+    if new_resource.send(ca_attr)
+      opt[ca_attr] = new_resource.send(ca_attr)
+    elsif not node['chef_vault_pki'][ca_attr].nil?
+      opt[ca_attr] = node['chef_vault_pki'][ca_attr]
+    else
+      opt[ca_attr] = opt[attr]
+    end
+  end
+
+  name = opt['name']
+
   r = directory opt['path'] do
     owner opt['owner']
     group opt['group']
@@ -36,31 +49,50 @@ action :create do
   end
   r.run_action(:create)
 
+  r = directory opt['ca_path'] do
+    owner opt['owner']
+    group opt['group']
+    mode opt['ca_path_mode']
+    recursive opt['ca_path_recursive']
+    not_if { opt['path'] == opt['ca_path'] }
+    action :nothing
+  end
+  r.run_action(:create)
+
+
   if opt['standalone']
-    c = ChefVaultPKI::CA.new(opt.select {|k,v| %w[key_size expires expires_factor name].include?(k) })
-    c.generate!
-    ca_cert = c.cert
-    ca_key = c.key
-    ca = { 'cert' => ca_cert.to_pem, 'key' => ca_key.to_pem }
+    ca_cert_file = ::File.join(opt['ca_path'], "#{opt['ca']}.crt")
+    ca_key_file = ::File.join(opt['ca_path'], "#{opt['ca']}.key")
+    if ::File.exist?(ca_key_file)
+      ca_cert = OpenSSL::X509::Certificate.new ::File.open(ca_cert_file).read
+      ca_key = OpenSSL::PKey::RSA.new ::File.open(ca_key_file).read
+      ca = { 'cert' => ca_cert.to_pem, 'key' => ca_key.to_pem }
+    else
+      c = ChefVaultPKI::CA.new(opt.select {|k,v| %w[key_size expires expires_factor name].include?(k) })
+      c.generate!
+      ca_cert = c.cert
+      ca_key = c.key
+      ca = { 'cert' => ca_cert.to_pem, 'key' => ca_key.to_pem }
+    end
   else
     ca = ChefVault::Item.load(opt['data_bag'], opt['ca'])
     ca_key = OpenSSL::PKey::RSA.new ca['key']
     ca_cert = OpenSSL::X509::Certificate.new ca['cert']
   end
 
-  r = file ::File.join(opt['path'], "#{opt['name']}.crt") do
+  r = file ::File.join(opt['path'], "#{name}.crt") do
     owner opt['owner']
     group opt['group']
     mode opt['public_mode']
-    content lazy { opt['bundle_ca'] ? [ca_cert, node.run_state['chef_vault_pki']['cert']].join("\n") : node.run_state['chef_vault_pki']['cert'] }
+    content lazy { opt['bundle_ca'] ? [ca_cert, node.run_state["chef_vault_pki_#{name}"]['cert']].join("\n") : node.run_state["chef_vault_pki_#{name}"]['cert'] }
     action :nothing
   end
 
-  r = file ::File.join(opt['path'], "#{opt['name']}.key") do
+  r = file ::File.join(opt['path'], "#{name}.key") do
     owner opt['owner']
     group opt['group']
     mode opt['private_mode']
-    content lazy { node.run_state['chef_vault_pki']['key'] }
+    content lazy { node.run_state["chef_vault_pki_#{name}"]['key'] }
     action :nothing
   end  
 
@@ -71,7 +103,7 @@ action :create do
 
       csr = OpenSSL::X509::Request.new
       csr.version = 0
-      csr.subject = OpenSSL::X509::Name.parse "CN=#{opt['name']}"
+      csr.subject = OpenSSL::X509::Name.parse "CN=#{name}"
       csr.public_key = key.public_key
       csr.sign key, OpenSSL::Digest::SHA1.new
 
@@ -94,16 +126,17 @@ action :create do
 
       csr_cert.sign ca_key, OpenSSL::Digest::SHA1.new
 
-      node.run_state['chef_vault_pki'] = { 'cert' => csr_cert.to_pem, 'key' => key.to_pem }
+      node.run_state["chef_vault_pki_#{name}"] = {}
+      node.run_state["chef_vault_pki_#{name}"] = { 'cert' => csr_cert.to_pem, 'key' => key.to_pem }
 
-      node.set['chef_vault_pki']['certs'][opt['ca']][opt['name']] = csr_cert.to_pem
+      node.set['chef_vault_pki']['certs'][opt['ca']]["chef_vault_pki_#{name}"] = csr_cert.to_pem
     end
-    action :nothing
-    notifies :create, resources(:file => ::File.join(opt['path'], "#{opt['name']}.crt")), :immediately
-    notifies :create, resources(:file => ::File.join(opt['path'], "#{opt['name']}.key")), :immediately
+    action opt['standalone'] ? :create : :nothing
+    notifies :create, resources(:file => ::File.join(opt['path'], "#{name}.crt")), :immediately
+    notifies :create, resources(:file => ::File.join(opt['path'], "#{name}.key")), :immediately
   end
 
-  r = file ::File.join(opt['path'], "#{opt['ca']}.key") do
+  r = file ::File.join(opt['ca_path'], "#{opt['ca']}.key") do
     owner opt['owner']
     group opt['group']
     mode opt['private_mode']
@@ -111,7 +144,7 @@ action :create do
     only_if { opt['standalone'] }
   end
 
-  r = file ::File.join(opt['path'], "#{opt['ca']}.crt") do
+  r = file ::File.join(opt['ca_path'], "#{opt['ca']}.crt") do
     owner opt['owner']
     group opt['group']
     mode opt['public_mode']
