@@ -41,12 +41,21 @@ sensu_spec 'verify cert' do
   command "check_cmd -c 'openssl verify -CAfile #{ca_cert} #{cert}' -o 'OK'"
 end
 
+sensu_spec 'verify ca name' do
+  command "check_cmd -c 'openssl x509 -subject -noout -in #{ca_cert}' -o 'subject= /CN=chef_vault_pki_ca'"
+end
+
 # Two certs one CA
 chef_vault_pki 'server_a' do
   ca 'twocerts_ca'
   ca_path '/opt/twocerts_ca'
   path '/opt/server_a'
 end
+
+sensu_spec 'verify twocerts_ca name' do
+  command "check_cmd -c 'openssl x509 -subject -noout -in /opt/twocerts_ca/twocerts_ca.crt' -o 'subject= /CN=twocerts_ca'"
+end
+
 
 chef_vault_pki 'server_b' do
   ca 'twocerts_ca'
