@@ -118,7 +118,7 @@ action :create do
     owner opt['owner']
     group opt['group']
     mode opt['public_mode']
-    content lazy { opt['bundle_ca'] ? [ca_cert, node.run_state["chef_vault_pki_#{name}"]['cert']].join("\n") : node.run_state["chef_vault_pki_#{name}"]['cert'] }
+    content lazy { opt['bundle_ca'] ? [node.run_state["chef_vault_pki_#{name}"]['cert'],ca_cert].join("") : node.run_state["chef_vault_pki_#{name}"]['cert'] }
     action :nothing
   end
 
@@ -143,7 +143,7 @@ action :create do
       rescue
         existing_fingerprint = ""
       end
-      Chef::Log.debug "Exiting CA fingerprint for #{opt['ca']} is #{existing_fingerprint}"
+      Chef::Log.debug "Existing CA fingerprint for #{opt['ca']} is #{existing_fingerprint}"
 
       begin
         ca_change = node.run_state["chef_vault_pki_#{name}"]['ca_new']
