@@ -99,16 +99,16 @@ action :create do
   end
 
   r = file ::File.join(opt['ca_path'], "#{opt['ca']}.key") do
-    owner opt['owner']
-    group opt['group']
+    owner opt['ca_owner']
+    group opt['ca_group']
     mode opt['private_mode']
     content ca['key']
     only_if { opt['standalone'] }
   end
 
   r = file ::File.join(opt['ca_path'], "#{opt['ca']}.crt") do
-    owner opt['owner']
-    group opt['group']
+    owner opt['ca_owner']
+    group opt['ca_group']
     mode opt['public_mode']
     content ca['cert']
     notifies :create, resources(:ruby_block => "ca_change_#{name}"), :immediately
