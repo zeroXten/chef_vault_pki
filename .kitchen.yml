@@ -6,10 +6,10 @@ provisioner:
   name: chef_solo
 
 platforms:
-  - name: opscode-ubuntu-12.04
-    driver_config:
-      box: opscode-ubuntu-12.04
-      box_url: https://opscode-vm-bento.s3.amazonaws.com/vagrant/opscode_ubuntu-12.04_provisionerless.box
+  - name: ubuntu-14.04
+  - name: ubuntu-12.04
+  - name: centos-6.4
+
 suites:
   - name: default
     run_list:
@@ -20,6 +20,3 @@ suites:
         standalone: true
       }
     }
-
-settings:
-  parallel: true

@@ -1,5 +1,7 @@
 include_recipe 'apt'
+
 include_recipe 'sensu_spec'
+include_recipe 'chef_vault_pki::definitions'
 
 chef_vault_pki 'chef_vault_test' do
   data_bag 'chef_vault_pki'
@@ -21,28 +23,32 @@ cert = ::File.join(node['chef_vault_pki']['path'], "chef_vault_test.crt")
 key = ::File.join(node['chef_vault_pki']['path'], "chef_vault_test.key")
 ca_cert = ::File.join(node['chef_vault_pki']['path'], "chef_vault_pki_ca.crt")
 
-sensu_spec 'cert file' do
-  command "check_cmd -c 'test -r #{cert}' -e 0"
-end
+describe 'chef_vault_pki' do
 
-sensu_spec 'key file' do
-  command "check_cmd -c 'test -r #{key}' -e 0"
-end
+  describe 'cert' do
+    it "must have readable file #{cert}"
+  end
 
-sensu_spec 'ca file' do
-  command "check_cmd -c 'test -r #{ca_cert}' -e 0"
-end
+  describe 'key' do
+    it "must have readable file #{key}"
+  end
 
-sensu_spec 'verify cert key' do
-  command "check_cmd -c '(openssl x509 -noout -modulus -in #{cert} | openssl md5 ; openssl rsa -noout -modulus -in #{key} | openssl md5) | uniq | wc -l' -o 1"
-end
+  describe 'ca' do
+    it "must have readable file #{ca_cert}"
+  end
 
-sensu_spec 'verify cert' do
-  command "check_cmd -c 'openssl verify -CAfile #{ca_cert} #{cert}' -o 'OK'"
-end
+  describe 'key pair' do
+    it "must have valid key file '#{key}' for cert file '#{cert}'"
+  end
 
-sensu_spec 'verify ca name' do
-  command "check_cmd -c 'openssl x509 -subject -noout -in #{ca_cert}' -o 'subject= /CN=chef_vault_pki_ca'"
+  describe 'valid cert' do
+    it "must have valid cert file '#{cert}' for ca cert file '#{ca_cert}'"
+  end
+
+  describe 'ca name' do
+    it "must match subject 'subject= /CN=chef_vault_pki_ca' for cert file #{ca_cert}"
+  end
+
 end
 
 # Two certs one CA
@@ -52,34 +58,36 @@ chef_vault_pki 'server_a' do
   path '/opt/server_a'
 end
 
-sensu_spec 'verify twocerts_ca name' do
-  command "check_cmd -c 'openssl x509 -subject -noout -in /opt/twocerts_ca/twocerts_ca.crt' -o 'subject= /CN=twocerts_ca'"
-end
-
-
 chef_vault_pki 'server_b' do
   ca 'twocerts_ca'
   ca_path '/opt/twocerts_ca'
   path '/opt/server_b'
 end
 
-%w[ server_a server_b twocerts_ca ].each do |f|
-  sensu_spec "twocerts #{f} cert exists" do
-    command "check_cmd -c 'test -r /opt/#{f}/#{f}.crt' -e 0"
-  end
-  sensu_spec "twocerts #{f} key exists" do
-    command "check_cmd -c 'test -r /opt/#{f}/#{f}.key' -e 0"
-  end
-end
+describe 'chef_vault_pki two certs' do
+  %w[ server_a server_b twocerts_ca ].each do |f|
+    describe "#{f} cert" do
+      it "must have readable file '/opt/#{f}/#{f}.crt'"
+    end
 
-%w[ server_a server_b twocerts_ca ].each do |f|
-  sensu_spec "verify #{f} cert key" do
-    command "check_cmd -c '(openssl x509 -noout -modulus -in /opt/#{f}/#{f}.crt | openssl md5 ; openssl rsa -noout -modulus -in /opt/#{f}/#{f}.key | openssl md5) | uniq | wc -l' -o 1"
-  end
-end
+    describe "#{f} key" do
+      it "must have readable file '/opt/#{f}/#{f}.key'"
+    end
 
-%w[ server_a server_b ].each do |f|
-  sensu_spec "verify #{f} cert" do
-    command "check_cmd -c 'openssl verify -CAfile /opt/twocerts_ca/twocerts_ca.crt /opt/#{f}/#{f}.crt' -o 'OK'"
+    describe "#{f} key pair" do
+      it "must have valid key file '/opt/#{f}/#{f}.key' for cert file '/opt/#{f}/#{f}.crt'"
+    end
   end
+
+  describe 'ca name' do
+    it "must match subject 'subject= /CN=twocerts_ca' for cert file '/opt/twocerts_ca/twocerts_ca.crt'"
+  end
+
+  
+  %w[ server_a server_b ].each do |f|
+    describe "#{f} valid cert" do
+      it "must have valid cert file '/opt/#{f}/#{f}.crt' for ca cert file '/opt/twocerts_ca/twocerts_ca.crt'"
+    end
+  end
+
 end

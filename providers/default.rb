@@ -139,7 +139,7 @@ action :create do
       Chef::Log.debug "Found fingerprint #{ca_fingerprint}"
 
       begin
-        existing_fingerprint = node['check_vault_pki']['certs'][opt['ca']]["chef_vault_pki_#{name}"]['ca_fingerprint']
+        existing_fingerprint = Digest::SHA1.hexdigest(OpenSSL::X509::Certificate.new(node['check_vault_pki']['cas'][opt['ca']]['fingerprint']))
       rescue
         existing_fingerprint = ""
       end
@@ -194,10 +194,7 @@ action :create do
       node.run_state["chef_vault_pki_#{name}"]['key'] = key.to_pem
 
       node.set['chef_vault_pki']['certs'][opt['ca']]["chef_vault_pki_#{name}"] = csr_cert.to_pem
-
-      if not existing_fingerprint
-        node.set['check_vault_pki']['certs'][opt['ca']]["chef_vault_pki_#{name}"]['ca_fingerprint'] = ca_fingerprint
-      end
+      node.set['chef_vault_pki']['cas'][opt['ca']]["fingerprint"] = ca_fingerprint
 
     end
     notifies :create, resources(:file => ::File.join(opt['path'], "#{name}.crt")), :immediately
