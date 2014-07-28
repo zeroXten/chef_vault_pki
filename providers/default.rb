@@ -1,8 +1,3 @@
-# RTFM
-def whyrun_supported?
-  true
-end
-
 use_inline_resources
 
 action :create do
@@ -62,17 +57,17 @@ action :create do
 
 
   if opt['standalone']
-    Chef::Log.debug "In standalone mode"
+    Chef::Log.debug "chef_vault_pki: In standalone mode"
 
     ca_cert_file = ::File.join(opt['ca_path'], "#{opt['ca']}.crt")
     ca_key_file = ::File.join(opt['ca_path'], "#{opt['ca']}.key")
     if ::File.exist?(ca_key_file)
-      Chef::Log.debug "CA Key file #{ca_key_file} exists, reading"
+      Chef::Log.debug "chef_vault_pki: CA Key file #{ca_key_file} exists, reading"
       ca_cert = OpenSSL::X509::Certificate.new ::File.open(ca_cert_file).read
       ca_key = OpenSSL::PKey::RSA.new ::File.open(ca_key_file).read
       ca = { 'cert' => ca_cert.to_pem, 'key' => ca_key.to_pem }
     else
-      Chef::Log.debug "No CA found, generating one"
+      Chef::Log.debug "chef_vault_pki: No CA found, generating one"
       Chef::Log.debug opt.select {|k,v| %w[key_size expires expires_factor ca].include?(k) }.to_s
       c = ChefVaultPKI::CA.new(:key_size => opt['key_size'], :expires => opt['expires'], :expires_factor => opt['expires_factor'], :name => opt['ca'])
       c.generate!
@@ -81,7 +76,7 @@ action :create do
       ca = { 'cert' => ca_cert.to_pem, 'key' => ca_key.to_pem }
     end
   else
-    Chef::Log.debug "In client mode, reading CA #{opt['ca']} from chef-vault data bag #{opt['data_bag']}"
+    Chef::Log.debug "chef_vault_pki: In client mode, reading CA #{opt['ca']} from chef-vault data bag #{opt['data_bag']}"
     ca = ChefVault::Item.load(opt['data_bag'], opt['ca'])
     ca_key = OpenSSL::PKey::RSA.new ca['key']
     ca_cert = OpenSSL::X509::Certificate.new ca['cert']
@@ -93,22 +88,22 @@ action :create do
         node.run_state["chef_vault_pki_#{name}"] = Mash.new
       end
       node.run_state["chef_vault_pki_#{name}"]['ca_new'] = true
-      Chef::Log.debug "CA has changed"
+      Chef::Log.debug "chef_vault_pki: CA has changed"
     end
     action :nothing
   end
 
   r = file ::File.join(opt['ca_path'], "#{opt['ca']}.key") do
-    owner opt['ca_owner']
-    group opt['ca_group']
+    owner (opt['ca_owner'] || opt['owner'])
+    group (opt['ca_group'] || opt['group'])
     mode opt['private_mode']
     content ca['key']
     only_if { opt['standalone'] }
   end
 
   r = file ::File.join(opt['ca_path'], "#{opt['ca']}.crt") do
-    owner opt['ca_owner']
-    group opt['ca_group']
+    owner (opt['ca_owner'] || opt['owner'])
+    group (opt['ca_group'] || opt['group'])
     mode opt['public_mode']
     content ca['cert']
     notifies :create, resources(:ruby_block => "ca_change_#{name}"), :immediately
@@ -134,9 +129,9 @@ action :create do
     block do
 
       ca_file = ::File.join(opt['ca_path'], "#{opt['ca']}.crt")
-      Chef::Log.debug "Getting fingerprint for #{ca_file}"
+      Chef::Log.debug "chef_vault_pki: Getting fingerprint for #{ca_file}"
       ca_fingerprint = Digest::SHA1.hexdigest(OpenSSL::X509::Certificate.new(::File.open(ca_file).read).to_der)
-      Chef::Log.debug "Found fingerprint #{ca_fingerprint}"
+      Chef::Log.debug "chef_vault_pki: Found fingerprint #{ca_fingerprint}"
 
       begin
         existing_fingerprint = node['chef_vault_pki']['cas'][opt['ca']]['fingerprint']
@@ -144,21 +139,21 @@ action :create do
         existing_fingerprint = ""
       end
 
-      Chef::Log.debug "Existing CA fingerprint for #{opt['ca']} is #{existing_fingerprint}"
+      Chef::Log.debug "chef_vault_pki: Existing CA fingerprint for #{opt['ca']} is #{existing_fingerprint}"
 
       begin
         ca_change = node.run_state["chef_vault_pki_#{name}"]['ca_new']
       rescue
         ca_change = false
       end
-      Chef::Log.debug "CA changed: #{ca_change}"
+      Chef::Log.debug "chef_vault_pki: CA changed: #{ca_change}"
 
       if not ca_change and ca_fingerprint == existing_fingerprint
-        Chef::Log.debug "CA not changed or finger prints matched. Done here."
-        return
+        Chef::Log.debug "chef_vault_pki: CA not changed and fingerprints matched. Done here."
+        next
       end
 
-      Chef::Log.debug "Generating CSR for #{name}"
+      Chef::Log.debug "chef_vault_pki: Generating CSR for #{name}"
       key = OpenSSL::PKey::RSA.new opt['key_size']
 
       csr = OpenSSL::X509::Request.new
@@ -184,7 +179,7 @@ action :create do
       extension_factory.create_extension 'keyUsage', 'keyEncipherment,dataEncipherment,digitalSignature'
       extension_factory.create_extension 'subjectKeyIdentifier', 'hash'
 
-      Chef::Log.debug "Signing CSR with CA #{opt['ca']}"
+      Chef::Log.debug "chef_vault_pki: Signing CSR with CA #{opt['ca']}"
       csr_cert.sign ca_key, OpenSSL::Digest::SHA1.new
 
 
@@ -195,9 +190,15 @@ action :create do
       node.run_state["chef_vault_pki_#{name}"]['key'] = key.to_pem
 
       node.set['chef_vault_pki']['certs'][opt['ca']]["chef_vault_pki_#{name}"] = csr_cert.to_pem
-      node.set['chef_vault_pki']['cas'][opt['ca']]["fingerprint"] = ca_fingerprint
-
+      node.set['chef_vault_pki']['cas'][opt['ca']]['fingerprint'] = ca_fingerprint
     end
+  end
+
+  r = ruby_block "trigger_new_cert" do
+    block do
+      Chef::Log.debug "chef_vault_pki: triggering new cert"
+    end
+    only_if { node.run_state.has_key?("chef_vault_pki_#{name}") }
     notifies :create, resources(:file => ::File.join(opt['path'], "#{name}.crt")), :immediately
     notifies :create, resources(:file => ::File.join(opt['path'], "#{name}.key")), :immediately
   end

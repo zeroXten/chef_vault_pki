@@ -14,6 +14,7 @@ chef_vault_pki 'chef_vault_test' do
   path_recursive = false
   owner 'root'
   group 'root'
+  ca_group 'bin'
   public_mode 0640
   private_mode 0600
   bundle_ca false
