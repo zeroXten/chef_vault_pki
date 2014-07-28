@@ -139,10 +139,11 @@ action :create do
       Chef::Log.debug "Found fingerprint #{ca_fingerprint}"
 
       begin
-        existing_fingerprint = Digest::SHA1.hexdigest(OpenSSL::X509::Certificate.new(node['check_vault_pki']['cas'][opt['ca']]['fingerprint']))
+        existing_fingerprint = node['chef_vault_pki']['cas'][opt['ca']]['fingerprint']
       rescue
         existing_fingerprint = ""
       end
+
       Chef::Log.debug "Existing CA fingerprint for #{opt['ca']} is #{existing_fingerprint}"
 
       begin
