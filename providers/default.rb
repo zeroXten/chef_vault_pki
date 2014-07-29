@@ -19,7 +19,7 @@ action :create do
   require 'chef-vault-pki'
 
   opt = { 'name' => new_resource.name.gsub(' ', '_') }
-  %w[ data_bag ca expires expires_factor key_size path path_mode path_recursive owner group public_mode private_mode bundle_ca standalone ].each do |attr|
+  %w[ data_bag ca expires expires_factor key_size path path_mode path_recursive owner group ca_owner ca_group public_mode private_mode bundle_ca standalone ].each do |attr|
     opt[attr] = new_resource.send(attr) ? new_resource.send(attr) : node['chef_vault_pki'][attr]
   end
 
@@ -46,8 +46,8 @@ action :create do
   r.run_action(:create)
 
   r = directory opt['ca_path'] do
-    owner opt['owner']
-    group opt['group']
+    owner (opt['ca_owner'] || opt['owner'])
+    group (opt['ca_group'] || opt['group'])
     mode opt['ca_path_mode']
     recursive opt['ca_path_recursive']
     not_if { opt['path'] == opt['ca_path'] }
@@ -134,7 +134,7 @@ action :create do
       Chef::Log.debug "chef_vault_pki: Found fingerprint #{ca_fingerprint}"
 
       begin
-        existing_fingerprint = node['chef_vault_pki']['cas'][opt['ca']]['fingerprint']
+        existing_fingerprint = node['chef_vault_pki']['certs'][opt['ca']]["chef_vault_pki_#{name}"]['ca_fingerprint']
       rescue
         existing_fingerprint = ""
       end
@@ -189,8 +189,10 @@ action :create do
       node.run_state["chef_vault_pki_#{name}"]['cert'] = csr_cert.to_pem
       node.run_state["chef_vault_pki_#{name}"]['key'] = key.to_pem
 
-      node.set['chef_vault_pki']['certs'][opt['ca']]["chef_vault_pki_#{name}"] = csr_cert.to_pem
-      node.set['chef_vault_pki']['cas'][opt['ca']]['fingerprint'] = ca_fingerprint
+      node.set['chef_vault_pki']['certs'][opt['ca']]["chef_vault_pki_#{name}"] = {
+        'cert' => csr_cert.to_pem,
+        'ca_fingerprint' => ca_fingerprint
+      }
     end
   end
 
