@@ -7,4 +7,4 @@ long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
 version          '1.5.4'
 
 depends 'sensu_spec', '~> 0.10'
-depends 'apt', '~> 2.3'
+depends 'apt', '~> 2.6'
