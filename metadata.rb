@@ -6,5 +6,5 @@ description      'Uses chef-vault to provide an easy-to-manage Public Key Infras
 long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
 version          '1.5.5'
 
-depends 'sensu_spec', '~> 0.10'
-depends 'apt', '~> 2.6'
+depends 'sensu_spec', '>= 0.10'
+depends 'apt', '>= 2.6'
