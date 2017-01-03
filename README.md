@@ -57,6 +57,7 @@ Or even override the default attributes:
       public_mode 0644
       private_mode 0600
       bundle_ca true
+      subject_alternate_names nil
     end
 
 This final example will create three files in `/opt/chef_vault_pki`:
@@ -101,6 +102,7 @@ See `attributes/default.rb` for defaults.
 * `node['chef_vault_pki']['private_mode']` - permissions of private files (e.g. keys)
 * `node['chef_vault_pki']['bundle_ca']` - this bundles the ca cert with the client cert
 * `node['chef_vault_pki']['standalone']` - doesn't attempt to read the ca from chef-vault, but generates on instead (e.g. for testing)
+* `node['chef_vault_pki']['subject_alternate_names']` - Optional array of SANs (e.g. ['DNS:foo.example', 'DNS:bar.example', 'IP:127.0.0.1'])
 
 Generated client certs are added to the node attributes:
 

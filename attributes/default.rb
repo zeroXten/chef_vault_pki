@@ -17,3 +17,4 @@ default['chef_vault_pki']['public_mode'] = 0644
 default['chef_vault_pki']['private_mode'] = 0600
 default['chef_vault_pki']['bundle_ca'] = false
 default['chef_vault_pki']['standalone'] = false
+default['chef_vault_pki']['subject_alternate_names'] = nil

@@ -201,6 +201,11 @@ action :create do
       extension_factory.create_extension 'keyUsage', 'keyEncipherment,dataEncipherment,digitalSignature'
       extension_factory.create_extension 'subjectKeyIdentifier', 'hash'
 
+      # Add any subjectAltName (SAN)
+      if opt['subject_alternate_names'] && !opt['subject_alternate_names'].empty?
+        extension_factory.create_extension("subjectAltName", opt['subject_alternate_names'].join(','))
+      end
+
       Chef::Log.debug "chef_vault_pki: Signing CSR with CA #{opt['ca']}"
       csr_cert.sign ca_key, OpenSSL::Digest::SHA1.new
 
