@@ -23,7 +23,7 @@ action :create do
 
   # Attributes for the cert
   opt = { 'name' => new_resource.name.gsub(' ', '_') }
-  %w[ data_bag ca expires expires_factor key_size path path_mode path_recursive owner group ca_owner ca_group public_mode private_mode bundle_ca standalone ].each do |attr|
+  %w[ data_bag ca expires expires_factor key_size path path_mode path_recursive owner group ca_owner ca_group public_mode private_mode bundle_ca standalone subject_alternate_names ].each do |attr|
     opt[attr] = new_resource.send(attr) ? new_resource.send(attr) : node['chef_vault_pki'][attr]
   end
 
@@ -200,6 +200,11 @@ action :create do
       extension_factory.create_extension 'basicConstraints', 'CA:FALSE'
       extension_factory.create_extension 'keyUsage', 'keyEncipherment,dataEncipherment,digitalSignature'
       extension_factory.create_extension 'subjectKeyIdentifier', 'hash'
+
+      # Add any subjectAltName (SAN)
+      if opt['subject_alternate_names'] && !opt['subject_alternate_names'].empty?
+        extension_factory.create_extension("subjectAltName", opt['subject_alternate_names'].join(','))
+      end
 
       Chef::Log.debug "chef_vault_pki: Signing CSR with CA #{opt['ca']}"
       csr_cert.sign ca_key, OpenSSL::Digest::SHA1.new
